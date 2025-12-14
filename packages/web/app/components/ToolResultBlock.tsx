@@ -102,7 +102,7 @@ export function ToolResultBlock({ block, toolName }: ToolResultBlockProps) {
   const renderContent = () => {
     if (isError) {
       return (
-        <pre className="text-xs bg-muted/50 p-3 m-3 rounded border overflow-x-auto whitespace-pre-wrap break-words text-red-600 dark:text-red-400">
+        <pre className="text-xs bg-muted/50 p-3 m-3 rounded border overflow-x-auto whitespace-pre-wrap break-words text-red-600">
           <code>{content}</code>
         </pre>
       );
@@ -132,24 +132,24 @@ export function ToolResultBlock({ block, toolName }: ToolResultBlockProps) {
   return (
     <div className="my-2 relative">
       {/* Visual connector line from tool use to result */}
-      <div className={`absolute left-5 -top-2 w-0.5 h-4 ${isError ? 'bg-red-300 dark:bg-red-700' : 'bg-green-300 dark:bg-green-700'}`} />
+      <div className={`absolute left-5 -top-2 w-0.5 h-4 ${isError ? 'bg-red-300' : 'bg-green-300'}`} />
 
-      <div className={`border rounded-lg overflow-hidden ${isError ? 'border-red-500/50 bg-red-50/50 dark:bg-red-950/20' : 'border-green-500/30 bg-green-50/30 dark:bg-green-950/20'}`}>
+      <div className={`border rounded-lg overflow-hidden ${isError ? 'border-red-500/50 bg-red-50/50' : 'border-green-500/30 bg-green-50/30'}`}>
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
           <div className="flex items-start gap-3 px-4 py-3">
-            <div className={`flex items-center justify-center h-8 w-8 rounded-lg border flex-shrink-0 ${isError ? 'bg-red-100 dark:bg-red-900/50 border-red-300 dark:border-red-700' : 'bg-green-100 dark:bg-green-900/50 border-green-300 dark:border-green-700'}`}>
+            <div className={`flex items-center justify-center h-8 w-8 rounded-lg border flex-shrink-0 ${isError ? 'bg-red-100 border-red-300' : 'bg-green-100 border-green-300'}`}>
               {isError ? (
-                <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                <AlertCircle className="h-4 w-4 text-red-600" />
               ) : (
-                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
               )}
             </div>
             <div className="flex-1 min-w-0 pt-0.5">
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className={`font-semibold text-sm ${isError ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}>
+                <span className={`font-semibold text-sm ${isError ? 'text-red-700' : 'text-green-700'}`}>
                   {isError ? 'Tool Error' : 'Tool Result'}
                 </span>
-                <Badge variant={isError ? 'destructive' : 'outline'} className={`text-xs h-5 ${isError ? '' : 'border-green-500/50 bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300'}`}>
+                <Badge variant={isError ? 'destructive' : 'outline'} className={`text-xs h-5 ${isError ? '' : 'border-green-500/50 bg-green-50 text-green-700'}`}>
                   {isError ? 'Failed' : 'Success'}
                 </Badge>
                 {hasNumbers && language !== 'text' && (

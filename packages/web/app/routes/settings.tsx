@@ -253,7 +253,7 @@ export default function Settings() {
               {/* Test Result */}
               {testResult && (
                 <div className={`flex items-center gap-2 p-3 rounded-md ${
-                  testResult.valid ? 'bg-green-50 text-green-900 dark:bg-green-950 dark:text-green-100' : 'bg-red-50 text-red-900 dark:bg-red-950 dark:text-red-100'
+                  testResult.valid ? 'bg-green-50 text-green-900' : 'bg-red-50 text-red-900'
                 }`}>
                   {testResult.valid ? (
                     <>

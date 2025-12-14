@@ -165,9 +165,9 @@ export function MonacoDiffBlock({
               <span className="text-xs text-muted-foreground font-mono">({language})</span>
             )}
             <div className="ml-4 flex items-center gap-2 text-xs">
-              <span className="text-red-600 dark:text-red-400">- old_string</span>
+              <span className="text-red-600">- old_string</span>
               <span className="text-muted-foreground">|</span>
-              <span className="text-green-600 dark:text-green-400">+ new_string</span>
+              <span className="text-green-600">+ new_string</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -241,9 +241,9 @@ export function MonacoDiffBlock({
     <div className={`monaco-diff-block rounded-md overflow-hidden border relative group ${className}`}>
       <div className="bg-muted px-3 py-2 text-xs font-medium border-b flex items-center justify-between">
         <div>
-          <span className="text-red-600 dark:text-red-400">- old_string</span>
+          <span className="text-red-600">- old_string</span>
           <span className="mx-2 text-muted-foreground">|</span>
-          <span className="text-green-600 dark:text-green-400">+ new_string</span>
+          <span className="text-green-600">+ new_string</span>
         </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button

@@ -15,64 +15,64 @@ interface ToolUseBlockProps {
 const toolConfig: Record<string, { icon: typeof Terminal; color: string; bgColor: string; label: string; category: string }> = {
   Bash: {
     icon: Terminal,
-    color: 'text-green-700 dark:text-green-400',
-    bgColor: 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800',
+    color: 'text-green-700',
+    bgColor: 'bg-green-50 border-green-200',
     label: 'Terminal',
     category: 'Execution'
   },
   Read: {
     icon: FileText,
-    color: 'text-blue-700 dark:text-blue-400',
-    bgColor: 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800',
+    color: 'text-blue-700',
+    bgColor: 'bg-blue-50 border-blue-200',
     label: 'Read File',
     category: 'File System'
   },
   Grep: {
     icon: Search,
-    color: 'text-purple-700 dark:text-purple-400',
-    bgColor: 'bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800',
+    color: 'text-purple-700',
+    bgColor: 'bg-purple-50 border-purple-200',
     label: 'Search Content',
     category: 'Search'
   },
   Glob: {
     icon: FileSearch,
-    color: 'text-violet-700 dark:text-violet-400',
-    bgColor: 'bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-800',
+    color: 'text-violet-700',
+    bgColor: 'bg-violet-50 border-violet-200',
     label: 'Find Files',
     category: 'Search'
   },
   Write: {
     icon: Pen,
-    color: 'text-orange-700 dark:text-orange-400',
-    bgColor: 'bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800',
+    color: 'text-orange-700',
+    bgColor: 'bg-orange-50 border-orange-200',
     label: 'Write File',
     category: 'File System'
   },
   Edit: {
     icon: Code,
-    color: 'text-amber-700 dark:text-amber-400',
-    bgColor: 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800',
+    color: 'text-amber-700',
+    bgColor: 'bg-amber-50 border-amber-200',
     label: 'Edit File',
     category: 'File System'
   },
   WebFetch: {
     icon: Globe,
-    color: 'text-cyan-700 dark:text-cyan-400',
-    bgColor: 'bg-cyan-50 dark:bg-cyan-950/30 border-cyan-200 dark:border-cyan-800',
+    color: 'text-cyan-700',
+    bgColor: 'bg-cyan-50 border-cyan-200',
     label: 'Fetch Web Content',
     category: 'Web'
   },
   WebSearch: {
     icon: Search,
-    color: 'text-sky-700 dark:text-sky-400',
-    bgColor: 'bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-800',
+    color: 'text-sky-700',
+    bgColor: 'bg-sky-50 border-sky-200',
     label: 'Search Web',
     category: 'Web'
   },
   Task: {
     icon: Play,
-    color: 'text-indigo-700 dark:text-indigo-400',
-    bgColor: 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800',
+    color: 'text-indigo-700',
+    bgColor: 'bg-indigo-50 border-indigo-200',
     label: 'Execute Task',
     category: 'Agent'
   },
@@ -84,8 +84,8 @@ export function ToolUseBlock({ block }: ToolUseBlockProps) {
 
   const config = toolConfig[block.name] || {
     icon: Wrench,
-    color: 'text-gray-700 dark:text-gray-400',
-    bgColor: 'bg-gray-50 dark:bg-gray-950/30 border-gray-200 dark:border-gray-800',
+    color: 'text-gray-700',
+    bgColor: 'bg-gray-50 border-gray-200',
     label: block.name,
     category: 'Tool'
   };
@@ -111,7 +111,7 @@ export function ToolUseBlock({ block }: ToolUseBlockProps) {
     <div className={`my-2 border rounded-lg overflow-hidden ${config.bgColor}`}>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <div className="flex items-start gap-3 px-4 py-3">
-          <div className={`flex items-center justify-center h-8 w-8 rounded-lg bg-white dark:bg-gray-900 border flex-shrink-0 ${config.color}`}>
+          <div className={`flex items-center justify-center h-8 w-8 rounded-lg bg-background border flex-shrink-0 ${config.color}`}>
             <Icon className="h-4 w-4" />
           </div>
           <div className="flex-1 min-w-0 pt-0.5">
