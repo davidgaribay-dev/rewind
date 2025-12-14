@@ -6,4 +6,7 @@ dotenv.config({ path: '../../.env' });
 const etl = new ETLService();
 etl.run()
   .then(() => process.exit(0))
-  .catch(() => process.exit(1));
+  .catch((error) => {
+    console.error('ETL Error:', error);
+    process.exit(1);
+  });

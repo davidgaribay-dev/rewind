@@ -1,4 +1,4 @@
-import { Link, useLocation, useParams } from 'react-router';
+import { Link, useLocation, useParams, useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useProjects } from '~/hooks/useProjects';
 import { getConversationById } from '~/lib/api-client';
@@ -10,12 +10,19 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from './ui/breadcrumb';
-import { FileText, FolderOpen, MessageSquare } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+import { FileText, FolderOpen, MessageSquare, ChevronDown } from 'lucide-react';
 
 export function Breadcrumbs() {
   const location = useLocation();
   const { projectId, conversationId } = useParams();
   const { projects } = useProjects();
+  const navigate = useNavigate();
 
   // Get current project
   const project = projectId ? projects.find((p) => p.id === projectId) : null;
@@ -73,6 +80,8 @@ export function Breadcrumbs() {
       <BreadcrumbList>
         {breadcrumbs.map((crumb, index) => {
           const Icon = crumb.icon;
+          const isProjectBreadcrumb = crumb.href.startsWith('/project/') && !crumb.href.includes('/conversation/');
+
           return (
             <div key={crumb.href} className="flex items-center">
               <BreadcrumbItem>
@@ -81,6 +90,27 @@ export function Breadcrumbs() {
                     <Icon className="h-3.5 w-3.5" />
                     <span className="max-w-[200px] truncate">{crumb.label}</span>
                   </BreadcrumbPage>
+                ) : isProjectBreadcrumb && projects.length > 1 ? (
+                  // Project breadcrumb with dropdown to switch projects
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="flex items-center gap-1.5 hover:opacity-80 outline-none">
+                      <Icon className="h-3.5 w-3.5" />
+                      <span className="max-w-[200px] truncate">{crumb.label}</span>
+                      <ChevronDown className="h-3 w-3 opacity-50" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="max-h-[400px] overflow-y-auto">
+                      {projects.map((proj) => (
+                        <DropdownMenuItem
+                          key={proj.id}
+                          onClick={() => navigate(`/project/${proj.id}`)}
+                          className="cursor-pointer"
+                        >
+                          <FolderOpen className="h-4 w-4 mr-2" />
+                          <span className="truncate">{proj.displayName}</span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 ) : (
                   <BreadcrumbLink asChild>
                     <Link to={crumb.href} className="flex items-center gap-1.5 hover:opacity-80">

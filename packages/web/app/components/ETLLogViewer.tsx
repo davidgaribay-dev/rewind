@@ -53,7 +53,8 @@ export function ETLLogViewer({ isOpen, onClose, onComplete }: ETLLogViewerProps)
     setError(null);
     setIsRunning(true);
 
-    const eventSource = new EventSource('http://localhost:3000/api/etl/stream');
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8429';
+    const eventSource = new EventSource(`${API_URL}/api/etl/stream`);
     eventSourceRef.current = eventSource;
 
     eventSource.addEventListener('start', (e) => {
@@ -140,19 +141,19 @@ export function ETLLogViewer({ isOpen, onClose, onComplete }: ETLLogViewerProps)
   const getLogColor = (type: ETLEvent['type']) => {
     switch (type) {
       case 'start':
-        return 'text-blue-500';
+        return 'text-blue-600';
       case 'project':
-        return 'text-purple-500';
+        return 'text-purple-600';
       case 'conversation':
-        return 'text-green-500';
+        return 'text-green-600';
       case 'complete':
         return 'text-green-600 font-semibold';
       case 'error':
-        return 'text-red-500';
+        return 'text-red-600';
       case 'info':
-        return 'text-gray-500';
+        return 'text-muted-foreground';
       default:
-        return 'text-gray-400';
+        return 'text-muted-foreground';
     }
   };
 
@@ -192,7 +193,7 @@ export function ETLLogViewer({ isOpen, onClose, onComplete }: ETLLogViewerProps)
         </div>
 
         {/* Logs Container */}
-        <div className="flex-1 overflow-y-auto p-4 font-mono text-sm bg-slate-950 text-slate-100">
+        <div className="flex-1 overflow-y-auto p-4 font-mono text-sm bg-muted/30 text-foreground">
           {logs.length === 0 && !error ? (
             <div className="flex items-center justify-center h-full text-muted-foreground">
               Connecting to server...
@@ -212,7 +213,7 @@ export function ETLLogViewer({ isOpen, onClose, onComplete }: ETLLogViewerProps)
                 </div>
               ))}
               {error && (
-                <div className="mt-4 p-3 bg-red-950/50 border border-red-800 rounded text-red-400">
+                <div className="mt-4 p-3 bg-destructive/10 border border-destructive/30 rounded text-destructive">
                   <strong>Error:</strong> {error}
                 </div>
               )}

@@ -2,6 +2,7 @@ import { getDb, schema } from '@/db/client';
 import { eq } from 'drizzle-orm';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import os from 'os';
 import { log } from '@/logger';
 import { withTimeout } from '@/utils/timeout';
 import { TIMEOUTS } from '@/utils/constants';
@@ -17,7 +18,7 @@ import type {
 
 // Type guard for assistant messages
 function isAssistantMessage(msg: ConversationMessage['message']): msg is AssistantMessage {
-  return 'usage' in msg && 'model' in msg;
+  return msg != null && typeof msg === 'object' && 'usage' in msg && 'model' in msg;
 }
 
 // Extract text content from content blocks for search indexing
@@ -81,18 +82,18 @@ export class ETLService {
       where: eq(schema.settings.key, 'rewind_data_path'),
     });
 
-    if (setting?.value) {
-      this.rewindPath = setting.value;
-      return this.rewindPath;
-    }
+    let configuredPath = setting?.value || process.env.REWIND_DATA_PATH || '';
 
-    // Fall back to environment variable
-    const envPath = process.env.REWIND_DATA_PATH || '';
-    if (!envPath) {
+    if (!configuredPath) {
       throw new Error('Rewind data path not configured. Please set it in Settings.');
     }
 
-    this.rewindPath = envPath;
+    // Expand ~ to home directory
+    if (configuredPath.startsWith('~')) {
+      configuredPath = path.join(os.homedir(), configuredPath.slice(1));
+    }
+
+    this.rewindPath = configuredPath;
     return this.rewindPath;
   }
 
@@ -242,7 +243,10 @@ export class ETLService {
         if (!line.trim()) continue;
         try {
           const msg = JSON.parse(line) as ConversationMessage;
-          messages.push(msg);
+          // Only include messages with a UUID (skip queue-operation, file-history-snapshot, etc.)
+          if (msg.uuid) {
+            messages.push(msg);
+          }
         } catch (parseError) {
           log.warn(`Failed to parse line in ${filePath}:`, parseError);
         }
@@ -458,7 +462,7 @@ export class ETLService {
     }
 
     const content = extractTextFromContent(firstUserMessage.message.content);
-    const title = content.substring(0, 50);
+    const title = content.substring(0, 200);
     return title.length < content.length ? `${title}...` : title;
   }
 }

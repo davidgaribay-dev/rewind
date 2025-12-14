@@ -15,64 +15,64 @@ interface ToolUseBlockProps {
 const toolConfig: Record<string, { icon: typeof Terminal; color: string; bgColor: string; label: string; category: string }> = {
   Bash: {
     icon: Terminal,
-    color: 'text-green-700',
-    bgColor: 'bg-green-50 border-green-200',
+    color: 'text-green-600',
+    bgColor: 'bg-green-500/10 border-green-500/20',
     label: 'Terminal',
     category: 'Execution'
   },
   Read: {
     icon: FileText,
-    color: 'text-blue-700',
-    bgColor: 'bg-blue-50 border-blue-200',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-500/10 border-blue-500/20',
     label: 'Read File',
     category: 'File System'
   },
   Grep: {
     icon: Search,
-    color: 'text-purple-700',
-    bgColor: 'bg-purple-50 border-purple-200',
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-500/10 border-purple-500/20',
     label: 'Search Content',
     category: 'Search'
   },
   Glob: {
     icon: FileSearch,
-    color: 'text-violet-700',
-    bgColor: 'bg-violet-50 border-violet-200',
+    color: 'text-violet-600',
+    bgColor: 'bg-violet-500/10 border-violet-500/20',
     label: 'Find Files',
     category: 'Search'
   },
   Write: {
     icon: Pen,
-    color: 'text-orange-700',
-    bgColor: 'bg-orange-50 border-orange-200',
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-500/10 border-orange-500/20',
     label: 'Write File',
     category: 'File System'
   },
   Edit: {
     icon: Code,
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-50 border-amber-200',
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-500/10 border-amber-500/20',
     label: 'Edit File',
     category: 'File System'
   },
   WebFetch: {
     icon: Globe,
-    color: 'text-cyan-700',
-    bgColor: 'bg-cyan-50 border-cyan-200',
+    color: 'text-cyan-600',
+    bgColor: 'bg-cyan-500/10 border-cyan-500/20',
     label: 'Fetch Web Content',
     category: 'Web'
   },
   WebSearch: {
     icon: Search,
-    color: 'text-sky-700',
-    bgColor: 'bg-sky-50 border-sky-200',
+    color: 'text-sky-600',
+    bgColor: 'bg-sky-500/10 border-sky-500/20',
     label: 'Search Web',
     category: 'Web'
   },
   Task: {
     icon: Play,
-    color: 'text-indigo-700',
-    bgColor: 'bg-indigo-50 border-indigo-200',
+    color: 'text-indigo-600',
+    bgColor: 'bg-indigo-500/10 border-indigo-500/20',
     label: 'Execute Task',
     category: 'Agent'
   },
@@ -84,8 +84,8 @@ export function ToolUseBlock({ block }: ToolUseBlockProps) {
 
   const config = toolConfig[block.name] || {
     icon: Wrench,
-    color: 'text-gray-700',
-    bgColor: 'bg-gray-50 border-gray-200',
+    color: 'text-foreground',
+    bgColor: 'bg-muted border-border',
     label: block.name,
     category: 'Tool'
   };
@@ -209,6 +209,25 @@ export function ToolUseBlock({ block }: ToolUseBlockProps) {
                       const isString = typeof value === 'string';
                       const content = isString ? value : JSON.stringify(value, null, 2);
                       const language = isString ? 'plaintext' : 'json';
+                      const lineCount = content.trim().split('\n').length;
+
+                      // Use simple code block for short content (3 lines or less)
+                      if (lineCount <= 3) {
+                        return (
+                          <div key={key} className="space-y-1">
+                            <div className="text-xs font-semibold text-foreground/70">{key}</div>
+                            <pre className="text-xs font-mono bg-muted/50 p-2 rounded border overflow-x-auto">
+                              <code>{content}</code>
+                            </pre>
+                          </div>
+                        );
+                      }
+
+                      // Use Monaco for longer content
+                      const estimatedHeight = Math.min(
+                        Math.max(lineCount * 19 + 20, 50),
+                        300
+                      );
 
                       return (
                         <div key={key} className="space-y-1">
@@ -216,18 +235,58 @@ export function ToolUseBlock({ block }: ToolUseBlockProps) {
                           <MonacoCodeBlock
                             code={content}
                             language={language}
-                            maxHeight={300}
+                            maxHeight={estimatedHeight}
                           />
                         </div>
                       );
                     })}
                 </>
               ) : (
-                /* Default view: show all parameters with Monaco editors */
+                /* Default view: show all parameters */
                 Object.entries(otherInputs).map(([key, value]) => {
                   const isString = typeof value === 'string';
                   const content = isString ? value : JSON.stringify(value, null, 2);
-                  const language = isString ? 'plaintext' : 'json';
+                  const lineCount = content.trim().split('\n').length;
+
+                  // Detect language from file_path for Write tool or content parameter
+                  let language = isString ? 'plaintext' : 'json';
+
+                  if (block.name === 'Write' && key === 'content' && 'file_path' in otherInputs) {
+                    const filePath = String(otherInputs.file_path || '');
+                    if (filePath.endsWith('.tsx')) language = 'tsx';
+                    else if (filePath.endsWith('.ts')) language = 'typescript';
+                    else if (filePath.endsWith('.jsx')) language = 'jsx';
+                    else if (filePath.endsWith('.js')) language = 'javascript';
+                    else if (filePath.endsWith('.json')) language = 'json';
+                    else if (filePath.endsWith('.css')) language = 'css';
+                    else if (filePath.endsWith('.md')) language = 'markdown';
+                    else if (filePath.endsWith('.py')) language = 'python';
+                    else if (filePath.endsWith('.rs')) language = 'rust';
+                    else if (filePath.endsWith('.go')) language = 'go';
+                    else if (filePath.endsWith('.html')) language = 'html';
+                    else if (filePath.endsWith('.xml')) language = 'xml';
+                    else if (filePath.endsWith('.yaml') || filePath.endsWith('.yml')) language = 'yaml';
+                    else if (filePath.endsWith('.sh')) language = 'shell';
+                    else if (filePath.endsWith('.sql')) language = 'sql';
+                  }
+
+                  // Use simple code block for short content (3 lines or less)
+                  if (lineCount <= 3) {
+                    return (
+                      <div key={key} className="space-y-1">
+                        <div className="text-xs font-semibold text-foreground/70">{key}</div>
+                        <pre className="text-xs font-mono bg-muted/50 p-2 rounded border overflow-x-auto">
+                          <code>{content}</code>
+                        </pre>
+                      </div>
+                    );
+                  }
+
+                  // Use Monaco for longer content
+                  const estimatedHeight = Math.min(
+                    Math.max(lineCount * 19 + 20, 50),
+                    300
+                  );
 
                   return (
                     <div key={key} className="space-y-1">
@@ -235,7 +294,7 @@ export function ToolUseBlock({ block }: ToolUseBlockProps) {
                       <MonacoCodeBlock
                         code={content}
                         language={language}
-                        maxHeight={300}
+                        maxHeight={estimatedHeight}
                       />
                     </div>
                   );

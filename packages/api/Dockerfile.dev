@@ -1,0 +1,29 @@
+FROM node:20-alpine
+
+# Install pnpm and netcat for healthchecks
+RUN corepack enable && corepack prepare pnpm@latest --activate && \
+    apk add --no-cache netcat-openbsd
+
+WORKDIR /app
+
+# Copy workspace files
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/api/package.json ./packages/api/
+COPY packages/shared/package.json ./packages/shared/
+
+# Install dependencies (including dev dependencies for tsx)
+RUN pnpm install --frozen-lockfile
+
+# Copy source code
+COPY packages/api ./packages/api
+COPY packages/shared ./packages/shared
+
+# Copy entrypoint script for database migrations
+COPY packages/api/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Expose port
+EXPOSE 8429
+
+# Use entrypoint for migrations, then override with command from docker-compose
+ENTRYPOINT ["docker-entrypoint.sh"]

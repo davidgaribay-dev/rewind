@@ -7,6 +7,9 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 FROM base AS builder
 WORKDIR /app
 
+# Accept build arguments
+ARG VITE_API_URL=http://localhost:8429
+
 # Copy workspace files
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/web/package.json ./packages/web/
@@ -19,9 +22,9 @@ RUN pnpm install --frozen-lockfile
 COPY packages/web ./packages/web
 COPY packages/shared ./packages/shared
 
-# Build packages
+# Build packages with environment variable
 RUN pnpm --filter @rewind/shared build
-RUN pnpm --filter @rewind/web build
+RUN VITE_API_URL=${VITE_API_URL} pnpm --filter @rewind/web build
 
 # Production stage with nginx
 FROM nginx:alpine AS runner
@@ -31,6 +34,10 @@ COPY --from=builder /app/packages/web/build/client /usr/share/nginx/html
 
 # Copy nginx config
 COPY packages/web/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Fix permissions for static assets
+RUN chmod -R 755 /usr/share/nginx/html && \
+    find /usr/share/nginx/html -type f -exec chmod 644 {} \;
 
 # Expose port
 EXPOSE 80

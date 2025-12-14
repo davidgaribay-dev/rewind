@@ -15,8 +15,9 @@ import { calculateStats } from '~/lib/stats';
 
 export function meta({ params }: Route.MetaArgs) {
   return [
-    { title: `Project - Claude Projects Viewer` },
-    { name: 'description', content: 'View project conversations' },
+    { title: `Project - Rewind` },
+    { name: 'description', content: 'View all conversations and statistics for this Claude Code project' },
+    { name: 'keywords', content: 'Claude Code, project conversations, AI chat history, statistics, token usage' },
   ];
 }
 

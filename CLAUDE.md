@@ -4,27 +4,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Rewind Viewer is a web application for browsing and visualizing Claude Code conversation history. It's a **pnpm monorepo** with three packages that work together:
+Rewind Viewer is a web application for browsing and visualizing Claude Code conversation history. It's a **pnpm monorepo** with four packages that work together:
 
 - **@rewind/api** - Hono API server with PostgreSQL + Drizzle ORM
 - **@rewind/web** - React SPA built with React Router v7 + TanStack Query
-- **@rewind/shared** - Shared TypeScript types used by both API and Web packages
+- **@rewind/cli** - CLI tool for automatic data synchronization with daemon mode
+- **@rewind/shared** - Shared TypeScript types used by all packages
 
-The application reads Claude Code conversation data from the local filesystem, processes it through an ETL pipeline into PostgreSQL, and serves it via a REST API to the React frontend.
+The application reads Claude Code conversation data from the local filesystem, processes it through an ETL pipeline into PostgreSQL, and serves it via a REST API to the React frontend. The CLI tool provides automatic background synchronization with file watching or polling modes.
 
 ## Essential Scripts Quick Reference
 
 ### Building
 ```bash
-pnpm build          # Build all packages (API + Web)
+pnpm build          # Build all packages (API + Web + CLI)
 pnpm build:api      # Build API package only
 pnpm build:web      # Build Web package only
+pnpm build:cli      # Build CLI package only
 ```
 
 ### Type Checking
 ```bash
 pnpm typecheck      # Run TypeScript type checking on Web package
 pnpm typecheck:web  # Run TypeScript type checking on Web package (alias)
+pnpm typecheck:cli  # Run TypeScript type checking on CLI package
 ```
 Note: The API package uses `tsc` during build. For manual typecheck, run `pnpm --filter @rewind/api build` or `cd packages/api && tsc --noEmit`.
 
@@ -49,6 +52,8 @@ pnpm start:web      # Serve production Web build
 ## Development Commands
 
 ### Environment Setup
+
+#### Option 1: Local Development (Recommended)
 ```bash
 # Copy environment template and configure REWIND_DATA_PATH
 cp .env.example .env
@@ -63,9 +68,57 @@ docker-compose up -d
 pnpm db:push
 ```
 
-### Running the Application
+#### Option 2: Docker Development (Full containerized setup with hot reload)
 ```bash
-# Start both API (port 3000) and Web (port 5173) in parallel
+# Copy environment template and configure REWIND_DATA_PATH
+cp .env.example .env
+
+# Start all services (Postgres + API + Web) with hot reload
+pnpm docker:dev
+
+# Or rebuild and start (when dependencies change)
+pnpm docker:dev:build
+
+# Stop all services
+pnpm docker:dev:down
+
+# Stop and remove volumes (clean slate)
+pnpm docker:dev:clean
+
+# View logs
+pnpm docker:dev:logs
+
+# Rebuild when Dockerfile/config changes
+pnpm docker:dev:rebuild
+
+# Rebuild specific service
+pnpm docker:dev:rebuild:api
+pnpm docker:dev:rebuild:web
+
+# View service-specific logs
+pnpm docker:dev:logs:api
+pnpm docker:dev:logs:web
+```
+
+**Development Docker Features:**
+- **Hot reload**: Source code changes are reflected immediately without rebuilding
+- **Volume mounts**: `packages/api/src`, `packages/web/app`, and `packages/shared/src` are mounted as read-only volumes
+- **Node modules isolation**: Uses named volumes for `node_modules` to avoid host conflicts
+- **Auto migrations**: API container automatically runs `pnpm db:push` on startup (non-interactive mode via `strict: false` in drizzle.config.ts)
+- **Separate networks**: Uses `rewind-network-dev` to avoid conflicts with production setup
+- **No manual pnpm install needed**: Dependencies are installed during image build
+
+**For Docker troubleshooting**, see [DOCKER_TROUBLESHOOTING.md](DOCKER_TROUBLESHOOTING.md) for:
+- Common issues and solutions (interactive prompts, port configuration, path resolution)
+- When to rebuild vs restart
+- Debugging workflows
+- Best practices
+
+### Running the Application
+
+#### Local Development
+```bash
+# Start both API (port 8429) and Web (port 8430) in parallel
 pnpm dev
 
 # Or start individually
@@ -73,7 +126,22 @@ pnpm dev:api  # API server only
 pnpm dev:web  # Web app only
 ```
 
+#### Docker Development
+```bash
+# Start all services with hot reload
+pnpm docker:dev
+
+# View logs (follow mode)
+pnpm docker:dev:logs
+
+# Or use docker-compose directly for specific operations
+docker-compose -f docker-compose.dev.yml restart api
+docker-compose -f docker-compose.dev.yml restart web
+```
+
 ### ETL Process
+
+#### Option 1: Manual ETL (Traditional)
 ```bash
 # One-time import of Rewind data
 pnpm etl:run
@@ -81,6 +149,32 @@ pnpm etl:run
 # Watch for file changes and auto-import (recommended during development)
 pnpm etl:watch
 ```
+
+#### Option 2: CLI Daemon (Recommended for Production)
+```bash
+# Install CLI globally
+pnpm cli:install
+
+# Configure CLI (interactive wizard)
+rewind config
+
+# Start daemon (runs in background)
+rewind start
+
+# Check status
+rewind status
+
+# Manual sync
+rewind sync
+
+# Stop daemon
+rewind stop
+
+# Uninstall CLI
+pnpm cli:uninstall
+```
+
+**Note**: The CLI daemon and manual ETL processes coordinate via a lock mechanism to prevent conflicts. You can use either approach or both safely.
 
 ### Database Management
 ```bash
@@ -116,8 +210,8 @@ pnpm --filter @rewind/api build
 ### Data Flow
 1. **Source Data**: Claude Code stores conversation history as JSONL files in project directories (configurable via Settings UI or `REWIND_DATA_PATH` env var)
 2. **ETL Layer**: The ETL service ([packages/api/src/etl/service.ts](packages/api/src/etl/service.ts)) scans directories, parses JSONL files, and loads data into PostgreSQL with real-time progress streaming via Server-Sent Events
-3. **Database**: PostgreSQL (port 54321) stores normalized data with five main tables: `projects`, `conversations`, `messages`, `contentBlocks`, `processedFiles`, `settings`
-4. **API Layer**: Hono server ([packages/api/src/index.ts](packages/api/src/index.ts)) exposes REST endpoints at port 3000
+3. **Database**: PostgreSQL (port 54329) stores normalized data with five main tables: `projects`, `conversations`, `messages`, `contentBlocks`, `processedFiles`, `settings`
+4. **API Layer**: Hono server ([packages/api/src/index.ts](packages/api/src/index.ts)) exposes REST endpoints at port 8429
 5. **Frontend**: React SPA fetches data via TanStack Query and displays conversations in a browsable UI with Monaco code editor, statistics dashboard, and dark mode support
 
 ### Database Schema
@@ -249,21 +343,22 @@ Required in `.env` (see [.env.example](.env.example)):
 - **POSTGRES_USER**: PostgreSQL username (default: `rewind`)
 - **POSTGRES_PASSWORD**: PostgreSQL password (default: `rewind_dev_password`)
 - **POSTGRES_DB**: PostgreSQL database name (default: `rewind`)
-- **DATABASE_URL**: PostgreSQL connection string (default: `postgresql://rewind:rewind_dev_password@localhost:54321/rewind`)
+- **DATABASE_URL**: PostgreSQL connection string (default: `postgresql://rewind:rewind_dev_password@localhost:54329/rewind`)
 
 **API Configuration:**
 - **API_PORT**: API server port (default: `3000`)
-- **WEB_URL**: Frontend URL for CORS (default: `http://localhost:5173`)
+- **WEB_URL**: Frontend URL for CORS (default: `http://localhost:8430`)
 
 **Web Configuration:**
-- **VITE_API_URL**: API base URL for frontend (default: `http://localhost:3000`)
+- **VITE_API_URL**: API base URL for frontend (default: `http://localhost:8429`)
 
 **Logging Configuration:**
 - **LOG_LEVEL**: Logging verbosity (options: `error`, `warn`, `info`, `verbose`, `debug`; default: `info`)
 - **NODE_ENV**: Environment mode (`development` or `production`; affects logging behavior)
 
 **Data Path Configuration:**
-- **REWIND_DATA_PATH**: Path to Claude Code data directory (e.g., `/Users/username/Library/Application Support/Rewind`)
+- **REWIND_DATA_PATH**: Path to Claude Code projects directory (default: `~/.claude/projects`)
+  - Common locations: `~/.claude/projects` (macOS/Linux), `%USERPROFILE%\.claude\projects` (Windows)
   - Note: This can also be configured via the Settings UI at `/settings`, which stores the path in the database `settings` table
   - Database setting takes precedence over environment variable
 
@@ -342,6 +437,90 @@ Required in `.env` (see [.env.example](.env.example)):
 6. Set `LOG_LEVEL=debug` in `.env` for detailed logging output
 7. Watch real-time ETL progress in the web UI using the "Import Data" button on the home page
 
+## CLI Tool (@rewind/cli)
+
+The CLI tool provides automatic background synchronization for Rewind data. It runs as a daemon process and can use either file watching or polling to detect changes.
+
+### Installation
+
+```bash
+# Build and install globally
+pnpm cli:install
+
+# Or manually
+cd packages/cli
+pnpm install
+pnpm build
+npm link
+```
+
+### Quick Start
+
+```bash
+# 1. Configure (interactive wizard)
+rewind config
+
+# 2. Start daemon
+rewind start
+
+# 3. Check status
+rewind status
+```
+
+### Commands
+
+- **`rewind start`** - Start daemon in background
+- **`rewind stop`** - Stop daemon
+- **`rewind restart`** - Restart daemon
+- **`rewind status`** - Show daemon status, sync stats, lock status, API health, configuration
+- **`rewind sync`** - Trigger manual sync immediately
+- **`rewind config`** - Interactive configuration wizard
+- **`rewind config --get <key>`** - Get configuration value
+- **`rewind config --set <key>=<value>`** - Set configuration value
+- **`rewind config --reset`** - Reset to defaults
+- **`rewind logs`** - View sync logs (last 50 lines)
+- **`rewind logs --lines <n>`** - View last N lines
+- **`rewind logs --clear`** - Clear all logs
+
+### Configuration
+
+Config stored in `~/.config/rewind-cli/config.json`:
+
+- **apiUrl**: API server URL (default: `http://localhost:8429`)
+- **dataPath**: Claude Code projects directory (default: `~/.claude/projects`)
+- **watchMode**: Use file watching (true) or polling (false) (default: `true`)
+- **interval**: Polling interval when watchMode is false (default: `5m`)
+  - Options: `1m`, `5m`, `15m`, `30m`, `1h`
+- **logLevel**: `error`, `warn`, `info`, `debug` (default: `info`)
+
+### Sync Coordination
+
+The CLI uses a lock file (`~/.config/rewind-cli/sync.lock`) to prevent conflicts:
+
+- Lock acquisition before syncing (checks for existing locks)
+- Stale lock detection (locks older than 5 minutes are removed)
+- Heartbeat updates (active locks updated every minute)
+- Graceful lock release after sync or on error
+
+This ensures CLI daemon, web UI "Import Data" button, and manual `pnpm etl:run` never conflict.
+
+### File Structure
+
+```
+packages/cli/
+├── src/
+│   ├── commands/          # CLI commands (start, stop, status, etc.)
+│   ├── components/        # Ink UI components (StatusDisplay, ConfigWizard)
+│   ├── services/          # Core services (daemon, sync, api)
+│   ├── utils/             # Utilities (config, logger, lock)
+│   └── index.ts           # CLI entry point
+├── package.json
+├── tsconfig.json
+└── README.md              # Detailed CLI documentation
+```
+
+See [packages/cli/README.md](packages/cli/README.md) for comprehensive CLI documentation.
+
 ## Logging
 
 The project uses Winston for structured logging. See [LOGGING.md](LOGGING.md) for detailed documentation on:
@@ -349,3 +528,39 @@ The project uses Winston for structured logging. See [LOGGING.md](LOGGING.md) fo
 - Configuring log levels via environment variables
 - Production logging with file transports
 - Testing and troubleshooting logging
+
+## Design System & UI Preferences
+
+### Marketing Site Design Language
+The marketing website (`@rewind/marketing`) follows a refined, spacious design language prioritizing:
+
+**Typography Scale:**
+- **Hero headings**: `text-4xl md:text-5xl lg:text-6xl` (not larger)
+- **Section headings**: `text-2xl md:text-3xl`
+- **Card/Feature headings**: `text-lg`
+- **Subheadings**: `text-base`
+- **Body text**: `text-sm` or `text-base`
+- **Supporting text**: `text-xs`
+- **Code snippets**: `text-xs`
+
+**Spacing & Padding:**
+- **Section padding**: `py-24` (generous vertical rhythm)
+- **Section title margins**: `mb-20` (ample breathing room)
+- **Card padding**: `p-8` (spacious, not cramped)
+- **Grid gaps**: `gap-8` to `gap-10` (elements need room to breathe)
+- **Step spacing**: `space-y-10` (clear visual separation)
+- **Feature icon size**: `h-12 w-12` with `h-6 w-6` SVGs (proportional, not oversized)
+- **Button padding**: `px-7 py-3` or `px-8 py-3` (balanced clickable areas)
+
+**Design Principles:**
+- Smaller, more refined text creates better visual hierarchy
+- Generous padding between elements improves readability
+- Less overwhelming, more elegant
+- Ample white space guides the eye
+- Proportional icon sizing maintains balance
+
+**When to Apply:**
+- Use this design language for all marketing pages and landing pages
+- Prioritize readability and visual comfort over density
+- Maintain consistency across the marketing site
+- Ensure mobile responsiveness with smaller base sizes

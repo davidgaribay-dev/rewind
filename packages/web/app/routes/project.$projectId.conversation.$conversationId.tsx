@@ -16,8 +16,9 @@ import { formatNumber, formatModelName } from '~/lib/stats';
 
 export function meta({ params }: Route.MetaArgs) {
   return [
-    { title: `Conversation - Claude Projects Viewer` },
-    { name: 'description', content: 'View conversation details' },
+    { title: `Conversation - Rewind` },
+    { name: 'description', content: 'View detailed conversation history with messages, code blocks, thinking processes, and token usage statistics' },
+    { name: 'keywords', content: 'Claude Code, conversation, AI chat, code blocks, thinking, tool usage, tokens, Monaco editor' },
   ];
 }
 
@@ -158,24 +159,39 @@ export default function ConversationDetail() {
 
       {/* Header */}
       <div className="border-b">
-        <div className="px-6 py-4">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <h2 className="text-xl font-bold mb-3">Conversation Details</h2>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap mb-3">
             <span className="text-sm text-muted-foreground">
               {format(conversation.timestamp, 'MMM dd, yyyy HH:mm')}
             </span>
-            <span className="text-muted-foreground">•</span>
-            <Badge variant="outline">{conversation.messageCount} messages</Badge>
             {conversation.model && (
               <>
                 <span className="text-muted-foreground">•</span>
                 <Badge>{formatModelName(conversation.model)}</Badge>
               </>
             )}
+          </div>
+          <div className="flex items-center gap-3 flex-wrap text-sm">
+            <div className="flex items-center gap-1.5">
+              <span className="text-muted-foreground">Messages:</span>
+              <span className="font-medium">{conversation.messageCount}</span>
+              <span className="text-muted-foreground text-xs">
+                ({conversation.messages.filter((m) => m.type === 'user').length} user, {conversation.messages.filter((m) => m.type === 'assistant').length} assistant)
+              </span>
+            </div>
             {conversation.totalTokens && (
               <>
                 <span className="text-muted-foreground">•</span>
-                <Badge variant="secondary">{formatNumber(conversation.totalTokens)} tokens</Badge>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">Tokens:</span>
+                  <span className="font-medium">{formatNumber(conversation.totalTokens)}</span>
+                  {conversation.inputTokens && conversation.outputTokens && (
+                    <span className="text-muted-foreground text-xs">
+                      ({formatNumber(conversation.inputTokens)} in, {formatNumber(conversation.outputTokens)} out)
+                    </span>
+                  )}
+                </div>
               </>
             )}
           </div>
@@ -184,17 +200,18 @@ export default function ConversationDetail() {
 
       {/* Content */}
       <Tabs defaultValue="formatted" className="flex-1 flex flex-col min-h-0">
-        <div className="border-b px-6">
-          <TabsList>
-            <TabsTrigger value="formatted">Conversation</TabsTrigger>
-            <TabsTrigger value="raw">Raw JSON</TabsTrigger>
-            <TabsTrigger value="stats">Statistics</TabsTrigger>
-          </TabsList>
+        <div className="border-b">
+          <div className="max-w-7xl mx-auto px-6">
+            <TabsList>
+              <TabsTrigger value="formatted">Conversation</TabsTrigger>
+              <TabsTrigger value="raw">Raw JSON</TabsTrigger>
+            </TabsList>
+          </div>
         </div>
 
         <TabsContent value="formatted" className="flex-1 min-h-0 mt-0">
           <ScrollArea className="h-full">
-            <div>
+            <div className="max-w-7xl mx-auto px-6 py-8">
               {conversation.messages.map((msg) => (
                 <ChatMessage key={msg.uuid} message={msg} />
               ))}
@@ -203,62 +220,13 @@ export default function ConversationDetail() {
         </TabsContent>
 
         <TabsContent value="raw" className="flex-1 min-h-0 mt-0 overflow-hidden">
-          <div className="h-full p-6">
+          <div className="h-full max-w-7xl mx-auto px-6 py-8">
             <MonacoCodeBlock
               code={JSON.stringify(conversation, null, 2)}
               language="json"
               maxHeight={9999}
             />
           </div>
-        </TabsContent>
-
-        <TabsContent value="stats" className="flex-1 min-h-0 mt-0">
-          <ScrollArea className="h-full">
-            <div className="max-w-5xl mx-auto px-6 py-6">
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="p-4 border rounded-lg">
-                  <div className="text-sm text-muted-foreground mb-1">Total Messages</div>
-                  <div className="text-2xl font-bold">{conversation.messageCount}</div>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <div className="text-sm text-muted-foreground mb-1">User Messages</div>
-                  <div className="text-2xl font-bold">
-                    {conversation.messages.filter((m) => m.type === 'user').length}
-                  </div>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <div className="text-sm text-muted-foreground mb-1">Assistant Messages</div>
-                  <div className="text-2xl font-bold">
-                    {conversation.messages.filter((m) => m.type === 'assistant').length}
-                  </div>
-                </div>
-                {conversation.totalTokens && (
-                  <div className="p-4 border rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">Total Tokens</div>
-                    <div className="text-2xl font-bold">
-                      {formatNumber(conversation.totalTokens)}
-                    </div>
-                  </div>
-                )}
-                {conversation.inputTokens && (
-                  <div className="p-4 border rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">Input Tokens</div>
-                    <div className="text-2xl font-bold">
-                      {formatNumber(conversation.inputTokens)}
-                    </div>
-                  </div>
-                )}
-                {conversation.outputTokens && (
-                  <div className="p-4 border rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-1">Output Tokens</div>
-                    <div className="text-2xl font-bold">
-                      {formatNumber(conversation.outputTokens)}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </ScrollArea>
         </TabsContent>
       </Tabs>
     </div>

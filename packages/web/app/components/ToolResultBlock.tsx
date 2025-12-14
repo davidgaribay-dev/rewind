@@ -132,24 +132,24 @@ export function ToolResultBlock({ block, toolName }: ToolResultBlockProps) {
   return (
     <div className="my-2 relative">
       {/* Visual connector line from tool use to result */}
-      <div className={`absolute left-5 -top-2 w-0.5 h-4 ${isError ? 'bg-red-300' : 'bg-green-300'}`} />
+      <div className={`absolute left-5 -top-2 w-0.5 h-4 ${isError ? 'bg-destructive/30' : 'bg-green-500/30'}`} />
 
-      <div className={`border rounded-lg overflow-hidden ${isError ? 'border-red-500/50 bg-red-50/50' : 'border-green-500/30 bg-green-50/30'}`}>
+      <div className={`border rounded-lg overflow-hidden ${isError ? 'border-destructive/30 bg-destructive/10' : 'border-green-500/20 bg-green-500/10'}`}>
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
           <div className="flex items-start gap-3 px-4 py-3">
-            <div className={`flex items-center justify-center h-8 w-8 rounded-lg border flex-shrink-0 ${isError ? 'bg-red-100 border-red-300' : 'bg-green-100 border-green-300'}`}>
+            <div className={`flex items-center justify-center h-8 w-8 rounded-lg border flex-shrink-0 ${isError ? 'bg-destructive/20 border-destructive/40' : 'bg-green-500/20 border-green-500/40'}`}>
               {isError ? (
-                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertCircle className="h-4 w-4 text-destructive" />
               ) : (
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
               )}
             </div>
             <div className="flex-1 min-w-0 pt-0.5">
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className={`font-semibold text-sm ${isError ? 'text-red-700' : 'text-green-700'}`}>
+                <span className={`font-semibold text-sm ${isError ? 'text-destructive' : 'text-green-600'}`}>
                   {isError ? 'Tool Error' : 'Tool Result'}
                 </span>
-                <Badge variant={isError ? 'destructive' : 'outline'} className={`text-xs h-5 ${isError ? '' : 'border-green-500/50 bg-green-50 text-green-700'}`}>
+                <Badge variant={isError ? 'destructive' : 'outline'} className={`text-xs h-5 ${isError ? '' : 'border-green-500/40 bg-green-500/10 text-green-600'}`}>
                   {isError ? 'Failed' : 'Success'}
                 </Badge>
                 {hasNumbers && language !== 'text' && (

@@ -1,6 +1,6 @@
 # FEATURES.md
 
-Complete feature documentation for Rewind Viewer - a web application for browsing and visualizing Claude Code conversation history.
+Complete feature documentation for **Rewind** - a modern web application for browsing and visualizing Claude Code conversation history.
 
 ## Table of Contents
 
@@ -17,15 +17,17 @@ Complete feature documentation for Rewind Viewer - a web application for browsin
 
 ## Overview
 
-Rewind Viewer transforms Claude Code's conversation history into an interactive, searchable, and visually rich web application. It provides a comprehensive interface for browsing conversations, analyzing tool usage, tracking token consumption, and understanding Claude's reasoning process.
+**Rewind** transforms Claude Code's conversation history into an interactive, searchable, and visually rich web application. It provides a comprehensive interface for browsing conversations, analyzing tool usage, tracking token consumption, and understanding Claude's reasoning process.
 
 **Core Value Proposition**:
 - Browse all Claude Code conversations across multiple projects
 - Search and filter conversations by content
-- Visualize tool executions with syntax highlighting
+- Visualize tool executions with Monaco code editor and syntax highlighting
 - Analyze token usage and conversation statistics
 - View Claude's extended thinking process
-- Beautiful, responsive interface with dark mode
+- Configure data path via intuitive Settings UI with directory browser
+- Real-time ETL progress streaming via Server-Sent Events
+- Beautiful, responsive interface with dark mode and theme toggle
 
 ---
 
@@ -174,10 +176,61 @@ Rich display of all Claude Code tool executions:
 
 - **Dark mode**: Full dark theme with carefully chosen colors
 - **Light mode**: Clean, accessible light theme
-- **System theme detection**: Auto-detect OS preference
-- **Persistent preference**: Theme choice saved locally
-- **Theme toggle**: Easy switch in navigation bar
-- **Consistent styling**: All components theme-aware
+- **System theme detection**: Auto-detect OS preference on first visit
+- **Persistent preference**: Theme choice saved in localStorage
+- **Theme toggle**: Sun/Moon icon toggle in navigation bar
+- **Consistent styling**: All components theme-aware via ThemeProvider
+- **Smooth transitions**: Gradual color changes when switching themes
+
+### 8. Settings & Configuration
+
+#### Settings UI (`/settings` route)
+- **Directory Browser**:
+  - Navigate filesystem with home and parent directory buttons
+  - Visual breadcrumb-style current path display
+  - List of subdirectories with folder icons
+  - Special indicator for directories containing conversation files (`.jsonl`)
+  - Badge showing "Has conversations" for valid data directories
+- **Path Validation**:
+  - "Test Path" button validates selected directory
+  - Displays count of projects and conversations found
+  - Real-time validation feedback (success/error states)
+  - Visual indicators (green checkmark / red X)
+- **Path Persistence**:
+  - "Save Settings" button stores path in database
+  - Database setting takes precedence over environment variable
+  - Loads saved path automatically on page load
+- **User-Friendly Interface**:
+  - Clear instructions and help text
+  - Current path display with monospace font
+  - Selected path preview
+  - Visual feedback for all actions via toast notifications
+
+### 9. Real-Time ETL Progress
+
+#### ETL Log Viewer Component
+- **Live Progress Streaming**: Server-Sent Events (SSE) for real-time updates
+- **Event Types Displayed**:
+  - Start event: ETL process beginning
+  - Project events: Each project being processed
+  - Conversation events: Individual conversation imports
+  - Info events: Status updates and progress messages
+  - Error events: Any issues encountered
+  - Complete event: ETL process finished
+- **Visual Indicators**:
+  - Color-coded event types (info = blue, error = red, success = green)
+  - Timestamp for each event
+  - Auto-scrolling log viewer
+  - Loading spinner during active ETL
+- **Triggered From**:
+  - "Import Data" button on home page
+  - Command line: `pnpm etl:run` or `pnpm etl:watch`
+  - POST request to `/api/etl/run`
+- **User Experience**:
+  - Modal dialog with live log feed
+  - Close button to dismiss (ETL continues in background)
+  - Completion toast notification
+  - Automatic project list refresh on completion
 
 ---
 
@@ -231,18 +284,28 @@ pnpm etl:watch
 ### 3. Data Storage
 
 #### PostgreSQL Schema
-- **5 main tables**: projects, conversations, messages, contentBlocks, processedFiles
+- **6 main tables**:
+  - `projects` - Project directories and metadata
+  - `conversations` - Conversation sessions with aggregate stats
+  - `messages` - Individual messages with content and metadata
+  - `contentBlocks` - Parsed content (text, thinking, tool_use, tool_result)
+  - `processedFiles` - File modification tracking for incremental ETL
+  - `settings` - Application configuration (e.g., data path)
 - **Normalized design**: Efficient storage, no duplication
 - **Cascade deletes**: Clean up related data automatically
 - **Indexes**: Optimized for common queries
-- **JSONB columns**: Flexible storage for raw content
-- **Text columns**: Full-text search support
+  - conversations: projectId, conversationId, sessionId, createdAt
+  - messages: conversationId, messageUuid, timestamp, model
+  - contentBlocks: messageId, type, toolName
+  - processedFiles: filePath
+- **JSONB columns**: Flexible storage for raw content and metadata
+- **Text columns**: Full-text search support with ILIKE queries
 
 #### Relationships
-- Projects → Conversations (one-to-many)
-- Conversations → Messages (one-to-many)
-- Messages → ContentBlocks (one-to-many)
-- All with proper foreign keys and cascading deletes
+- Projects → Conversations (one-to-many, cascade delete)
+- Conversations → Messages (one-to-many, cascade delete)
+- Messages → ContentBlocks (one-to-many, cascade delete)
+- Settings: Key-value store with unique constraint on key
 
 ### 4. Data Integrity
 
@@ -298,21 +361,31 @@ pnpm etl:watch
 - **Total aggregation**: Conversation-level totals
 - **Cache efficiency**: Show cache hit rates
 
-### 3. Code Syntax Highlighting
+### 3. Monaco Code Editor Integration
+
+#### Monaco Editor Features
+- **Full-featured code editor**: Same editor as VS Code
+- **Syntax highlighting**: Support for 60+ languages
+- **Line numbers**: Easy reference for code blocks
+- **Copy functionality**: One-click copy button
+- **Diff viewer**: Side-by-side comparison for code changes (MonacoDiffBlock)
+- **Theme integration**: Automatically matches light/dark mode
+- **Minimap**: Visual code overview for large blocks
+- **Word wrap**: Configurable text wrapping
+- **Read-only mode**: Perfect for viewing conversation code
 
 #### Supported Languages
-- **Web**: TypeScript, JavaScript, JSX, TSX, JSON, HTML, CSS
-- **Backend**: Python, Rust, Go, Java, C, C++, C#, PHP, Ruby
-- **Shell**: Bash, Shell script
-- **Data**: SQL, YAML, TOML, Markdown
-- **Auto-detection**: Analyzes content to determine language
+- **Web**: TypeScript, JavaScript, JSX, TSX, JSON, HTML, CSS, SCSS
+- **Backend**: Python, Rust, Go, Java, C, C++, C#, PHP, Ruby, Kotlin, Swift
+- **Shell**: Bash, PowerShell, Shell script
+- **Data**: SQL, YAML, TOML, XML, Markdown
+- **Config**: Dockerfile, nginx, Apache, .env files
+- **Auto-detection**: Intelligently determines language from content and context
 
-#### Highlighting Features
-- **Line numbers**: Easy reference for Read tool output
-- **Theme-aware**: Works in light and dark modes
-- **Copy functionality**: Copy code with button click
-- **Lazy loading**: Load highlighter only when needed
-- **Rehype-highlight**: Fast, reliable syntax highlighting
+#### Additional Code Highlighting
+- **Rehype-highlight**: Fallback for inline code and markdown
+- **Lazy loading**: Load Monaco only when code blocks are present
+- **Performance optimized**: Virtualized rendering for large files
 
 ---
 
@@ -391,8 +464,8 @@ pnpm dev  # Start both API and web with HMR
 
 #### Parallel Development
 ```bash
-pnpm dev:api  # API only on port 3000
-pnpm dev:web  # Web only on port 5173
+pnpm dev:api  # API only on port 8429
+pnpm dev:web  # Web only on port 8430
 ```
 - **Independent processes**: Work on API or frontend separately
 - **CORS configured**: Seamless communication
@@ -583,10 +656,13 @@ pnpm --filter @rewind/web <command>
 ### 1. Claude Code Integration
 
 #### Data Source
-- **Standard location**: `~/Library/Application Support/Rewind` (macOS)
-- **Configurable path**: REWIND_DATA_PATH environment variable
+- **Configurable via Settings UI**: Navigate to `/settings` to browse and select data path
+- **Database-stored preference**: Path saved in `settings` table
+- **Environment variable fallback**: REWIND_DATA_PATH as backup configuration
+- **Standard location**: `~/.claude/projects` (macOS/Linux), `%USERPROFILE%\.claude\projects` (Windows)
 - **Auto-discovery**: Scans for project directories
 - **No modification**: Reads files without changing them
+- **Path validation**: Test path to verify conversations before saving
 
 #### Supported Data
 - **All message types**: User, assistant, system
@@ -634,24 +710,50 @@ docker-compose down   # Stop database
 All endpoints return JSON:
 
 **Projects**:
-- `GET /api/projects` - List all projects
-- `GET /api/projects/:id` - Get single project
-- `GET /api/projects/:id/conversations` - Get project conversations
+- `GET /api/projects` - List all projects with stats (conversation count, message count, last activity)
+- `GET /api/projects/:id` - Get single project details
+- `GET /api/projects/:id/conversations` - Get all conversations for a project
 
 **Conversations**:
-- `GET /api/conversations/:id` - Get full conversation
-- `GET /api/conversations/search?q=query&projectId=id` - Search
+- `GET /api/conversations/:id` - Get full conversation with messages and content blocks
+- `GET /api/conversations/search?q=query&projectId=id` - Search conversations by content or title (max 500 chars, max 50 results)
+
+**ETL (Extract, Transform, Load)**:
+- `POST /api/etl/run` - Trigger ETL import (runs in background)
+- `GET /api/etl/status` - Get current ETL status
+- `GET /api/etl/stream` - Stream ETL progress via Server-Sent Events (SSE)
+
+**Settings**:
+- `GET /api/settings/data-path` - Get current data path from database or env var
+- `POST /api/settings/data-path` - Set/update data path in database
+- `GET /api/settings/browse?path=...` - Browse directories with conversation detection
+- `POST /api/settings/test-path` - Validate path and count projects/conversations
+
+**Health Check**:
+- `GET /api/health` - Returns `{ status: 'ok', timestamp }`
+
+#### Server-Sent Events (SSE)
+- **ETL Progress Streaming**: `/api/etl/stream` endpoint
+- **Real-time updates**: Events pushed as they occur
+- **Event types**: start, project, conversation, info, error, complete
+- **Automatic reconnection**: Browser handles connection drops
+- **Efficient**: One-way server-to-client communication
 
 #### CORS Configuration
-- **Configured origins**: WEB_URL environment variable
+- **Configured origins**: WEB_URL environment variable (default: http://localhost:8430)
 - **Allowed methods**: GET, POST, PUT, DELETE, OPTIONS
 - **Development-friendly**: Localhost allowed by default
+- **Credentials support**: Cookies and auth headers allowed
 
 #### Response Format
 - **Consistent structure**: All responses are JSON
-- **Error format**: `{ error: "message" }`
+- **Error format**: `{ error: "message" }` with appropriate HTTP status codes
 - **Success data**: Direct object or array
 - **HTTP status codes**: Proper REST semantics
+  - 200: Success
+  - 400: Bad request (validation errors)
+  - 404: Not found
+  - 500: Server error
 
 ---
 
@@ -687,13 +789,26 @@ Based on the architecture, these features could be easily added:
 
 ## Summary
 
-Rewind Viewer is a feature-rich, production-quality application that transforms Claude Code's conversation history into an accessible, searchable, and visually stunning interface. It combines:
+**Rewind** is a feature-rich, production-quality application that transforms Claude Code's conversation history into an accessible, searchable, and visually stunning interface. It combines:
 
-- **Comprehensive data extraction**: Captures all conversation details
-- **Beautiful visualization**: Rich rendering of messages, tools, and thinking
-- **Powerful search**: Full-text search across all conversations
-- **Detailed analytics**: Token usage, model distribution, activity trends
-- **Developer-friendly**: Type-safe, well-logged, easy to extend
-- **Production-ready**: Docker, migrations, error handling, performance optimization
+- **Comprehensive data extraction**: Captures all conversation details with intelligent ETL pipeline
+- **Beautiful visualization**: Rich rendering with Monaco code editor, syntax highlighting, and Monaco diff viewer
+- **Real-time ETL progress**: Server-Sent Events for live import updates
+- **Intuitive configuration**: Settings UI with directory browser and path validation
+- **Powerful search**: Full-text search across all conversations and content
+- **Detailed analytics**: Token usage, model distribution, activity trends with Recharts visualizations
+- **Modern UI/UX**: Dark mode, theme toggle, responsive design, toast notifications
+- **Developer-friendly**: 100% TypeScript, type-safe, well-logged, easy to extend
+- **Production-ready**: Docker, PostgreSQL, migrations, error handling, performance optimization
 
-The application serves both casual users (browsing conversations) and power users (analyzing tool usage, tracking tokens, debugging Claude interactions) with an interface that's intuitive yet powerful.
+The application serves both casual users (browsing conversations) and power users (analyzing tool usage, tracking tokens, debugging Claude interactions, viewing extended thinking) with an interface that's intuitive yet powerful.
+
+**Key Differentiators**:
+- Monaco Editor integration (same as VS Code)
+- Real-time ETL progress streaming via SSE
+- Settings UI for easy data path configuration
+- Content blocks separation (text, thinking, tool use, tool results)
+- Database-stored configuration preferences
+- Comprehensive token usage tracking including cache tokens
+- Extended thinking visualization
+- Dark mode with system preference detection

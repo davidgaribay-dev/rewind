@@ -21,3 +21,5 @@ logs/
 # IDE
 .vscode/
 .idea/
+
+packages/marketing/

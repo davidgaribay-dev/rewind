@@ -30,37 +30,37 @@ export function WelcomeScreen({ onOpenFolder }: WelcomeScreenProps) {
             <div className="flex justify-center mb-4">
               <FolderOpen className="h-16 w-16 text-primary" />
             </div>
-            <CardTitle className="text-3xl">Welcome to Claude Projects Viewer</CardTitle>
+            <CardTitle className="text-3xl">Enterprise AI Governance Platform</CardTitle>
             <CardDescription className="text-base mt-4">
-              Browse and visualize your Claude Code conversation history
+              Comprehensive monitoring, auditability, and cost management for AI-assisted development
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
-              <h3 className="font-semibold">Getting Started</h3>
+              <h3 className="font-semibold">Configuration Steps</h3>
               <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                <li>Click the "Open Folder" button below</li>
-                <li>Navigate to your <code className="text-xs bg-muted px-1 py-0.5 rounded">.claude/projects</code> directory</li>
-                <li>Grant read permission when prompted</li>
-                <li>Explore your conversation history!</li>
+                <li>Configure data source path via Settings</li>
+                <li>Initialize the data pipeline to process AI conversations</li>
+                <li>Grant necessary permissions when prompted</li>
+                <li>Begin monitoring your AI development workflows</li>
               </ol>
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-semibold">Features</h3>
+              <h3 className="font-semibold">Enterprise Capabilities</h3>
               <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
-                <li>Browse all your Claude Code projects and conversations</li>
-                <li>View detailed conversation history with formatted messages</li>
-                <li>Analyze token usage and model distribution</li>
-                <li>Search and filter conversations</li>
-                <li>View statistics and activity timelines</li>
+                <li>Complete audit trail of all AI interactions and tool executions</li>
+                <li>Granular cost analytics with token-level tracking</li>
+                <li>Compliance-ready reporting for regulatory requirements</li>
+                <li>Full-text search across conversation history</li>
+                <li>Real-time monitoring and performance metrics</li>
               </ul>
             </div>
 
             <div className="flex justify-center pt-4">
               <Button size="lg" onClick={onOpenFolder} disabled={!isSupported}>
                 <FolderOpen className="mr-2 h-5 w-5" />
-                Open .claude/projects Folder
+                Configure Data Source
               </Button>
             </div>
           </CardContent>

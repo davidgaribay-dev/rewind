@@ -35,6 +35,13 @@ function CodeBlock({ children, className }: { children: string; className?: stri
     });
   };
 
+  // Calculate appropriate height based on content
+  const lineCount = children.trim().split('\n').length;
+  const maxHeight = Math.min(
+    Math.max(lineCount * 19 + 20, 50), // At least 50px, ~19px per line + padding
+    600 // Cap at 600px
+  );
+
   return (
     <figure className="relative group/code not-prose my-4">
       <div className="flex items-center justify-between bg-muted/50 px-4 py-2 border-b border-border rounded-t-lg">
@@ -62,7 +69,7 @@ function CodeBlock({ children, className }: { children: string; className?: stri
         code={children}
         language={language}
         className="!mt-0 !rounded-t-none"
-        maxHeight={600}
+        maxHeight={maxHeight}
       />
     </figure>
   );

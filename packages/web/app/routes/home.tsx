@@ -13,8 +13,9 @@ import { useToast } from '~/hooks/use-toast';
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: 'Claude Projects Viewer' },
-    { name: 'description', content: 'Browse and visualize your Claude Code conversation history' },
+    { title: 'Projects - Rewind AI Governance Platform' },
+    { name: 'description', content: 'Enterprise AI governance dashboard. Monitor projects, track costs, ensure compliance, and maintain complete auditability across all Claude Code workflows.' },
+    { name: 'keywords', content: 'AI governance, project monitoring, cost tracking, compliance, auditability, Claude Code, enterprise AI' },
   ];
 }
 
@@ -30,8 +31,8 @@ export default function Home() {
 
   const handleETLComplete = () => {
     toast({
-      title: 'Import Complete',
-      description: 'Your Claude Code conversation history has been successfully imported.',
+      title: 'Data Pipeline Complete',
+      description: 'AI conversation data has been successfully processed and indexed.',
     });
     refreshProjects();
   };
@@ -44,9 +45,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold">Projects</h1>
+              <h1 className="text-3xl font-bold">AI Development Projects</h1>
               <p className="text-muted-foreground mt-1">
-                Browse your Claude Code conversation history ({projects.length} projects)
+                Monitor and govern AI-assisted development across {projects.length} {projects.length === 1 ? 'project' : 'projects'}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -84,11 +85,11 @@ export default function Home() {
             <div className="flex items-center justify-center h-64 text-muted-foreground">
               <div className="text-center">
                 <Database className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-                <p className="text-lg mb-2">No projects found</p>
-                <p className="text-sm mb-4">Import your Claude Code conversation history to get started</p>
+                <p className="text-lg font-semibold mb-2">No AI Projects Found</p>
+                <p className="text-sm text-muted-foreground mb-4">Initialize the data pipeline to begin monitoring your AI development workflows</p>
                 <Button onClick={handleRunETL}>
                   <Database className="h-4 w-4 mr-2" />
-                  Import Data
+                  Initialize Data Pipeline
                 </Button>
               </div>
             </div>

@@ -4,10 +4,11 @@ A modern web application for browsing and visualizing your Claude Code conversat
 
 ## Architecture
 
-This is a **pnpm monorepo** with three packages:
+This is a **pnpm monorepo** with four packages:
 
 - **@rewind/api** - Hono API server with PostgreSQL + Drizzle ORM
 - **@rewind/web** - React SPA built with React Router v7 + TanStack Query
+- **@rewind/marketing** - Astro-based marketing and landing page website
 - **@rewind/shared** - Shared TypeScript types used by both API and Web packages
 
 ```
@@ -24,68 +25,85 @@ This is a **pnpm monorepo** with three packages:
          ▼
 ┌────────────────┐
 │  PostgreSQL    │  (5 tables: projects, conversations, messages,
-│  (port 54321)  │   contentBlocks, processedFiles, settings)
+│  (port 54329)  │   contentBlocks, processedFiles, settings)
 └────────┬───────┘
          │
          ▼
     ┌─────────┐
-    │ Hono API│  (port 3000, REST + SSE endpoints)
+    │ Hono API│  (port 8429, REST + SSE endpoints)
     └────┬────┘
          │
          ▼
 ┌─────────────────┐
-│   React Web     │  (port 5173, Monaco editor, Statistics,
+│   React Web     │  (port 8430, Monaco editor, Statistics,
 │                 │   Settings UI, Dark mode)
 └─────────────────┘
 ```
 
-## Setup
+## Quick Start (Production)
 
-### 1. Prerequisites
+**One command to rule them all:**
+
+```bash
+# 1. Clone and configure
+git clone https://github.com/davidgaribay-dev/rewind.git
+cd rewind
+cp .env.example .env
+
+# 2. Set your Claude Code data path in .env (defaults to ~/.claude/projects)
+# REWIND_DATA_PATH=~/.claude/projects
+
+# 3. Start everything (builds images, installs deps, runs migrations, starts all services)
+docker-compose up -d
+```
+
+That's it! 🎉
+
+- **Web UI**: http://localhost:8430
+- **API**: http://localhost:8429
+- **Database**: localhost:54329
+
+The first run will take 2-3 minutes to build. Subsequent starts are instant.
+
+**Note**: You can also configure the data path via the Settings UI at http://localhost:8430/settings after startup.
+
+---
+
+## Development Setup
+
+For local development with hot reload:
+
+### Prerequisites
 
 - Node.js 18+
 - pnpm (`npm install -g pnpm`)
 - Docker & Docker Compose
 
-### 2. Environment Configuration
-
-Copy the example environment file:
+### Steps
 
 ```bash
-cp .env.example .env
-```
-
-**Optional**: Update `REWIND_DATA_PATH` in `.env` to point to your Claude Code data directory:
-
-```bash
-# Example for macOS
-REWIND_DATA_PATH=/Users/yourusername/Library/Application Support/Rewind
-```
-
-**Note**: You can also configure the data path later via the Settings UI at `/settings`, which provides a directory browser with conversation detection. The Settings UI stores the path in the database and takes precedence over the environment variable.
-
-### 3. Install Dependencies
-
-```bash
+# 1. Clone and install
+git clone https://github.com/davidgaribay-dev/rewind.git
+cd rewind
 pnpm install
-```
 
-### 4. Start PostgreSQL
+# 2. Configure environment
+cp .env.example .env
+# Edit .env and set REWIND_DATA_PATH
 
-```bash
-docker-compose up -d
-```
+# 3. Start PostgreSQL only
+docker-compose up -d postgres
 
-### 5. Set up Database
-
-```bash
-# Generate and push schema
+# 4. Push database schema
 pnpm db:push
+
+# 5. Start dev servers with hot reload
+pnpm dev  # Runs API (port 8429) and Web (port 8430) in parallel
 ```
 
-### 6. Run ETL Process
+### ETL Process
 
-Import your Rewind data into PostgreSQL:
+Import your Claude Code data into PostgreSQL:
 
 ```bash
 # One-time import
@@ -95,8 +113,8 @@ pnpm etl:run
 pnpm etl:watch
 ```
 
-**Alternatively**, you can trigger ETL imports from the web UI:
-- Navigate to the home page at `http://localhost:5173`
+**Alternatively**, trigger ETL imports from the web UI:
+- Navigate to http://localhost:8430
 - Click the "Import Data" button
 - Watch real-time progress via Server-Sent Events
 
@@ -107,8 +125,8 @@ pnpm etl:watch
 pnpm dev
 
 # Or start individually
-pnpm dev:api  # API on port 3000
-pnpm dev:web  # Web on port 5173
+pnpm dev:api  # API on port 8429
+pnpm dev:web  # Web on port 8430
 ```
 
 ## Development
@@ -117,13 +135,16 @@ pnpm dev:web  # Web on port 5173
 
 **Development:**
 - `pnpm dev` - Start both API and web in parallel
-- `pnpm dev:api` - Start API server only (port 3000)
-- `pnpm dev:web` - Start web app only (port 5173)
+- `pnpm dev:api` - Start API server only (port 8429)
+- `pnpm dev:web` - Start web app only (port 8430)
+- `pnpm dev:marketing` - Start marketing site only (port 4321)
 
 **Building:**
-- `pnpm build` - Build all packages (API + Web)
+- `pnpm build` - Build all packages (API + Web + Marketing)
 - `pnpm build:api` - Build API package only
 - `pnpm build:web` - Build Web package only
+- `pnpm build:marketing` - Build marketing site only
+- `pnpm preview:marketing` - Preview production marketing build
 
 **Type Checking:**
 - `pnpm typecheck` - Run TypeScript type checking on Web package
@@ -145,6 +166,7 @@ pnpm dev:web  # Web on port 5173
 **Package-specific:**
 - `pnpm --filter @rewind/api <command>`
 - `pnpm --filter @rewind/web <command>`
+- `pnpm --filter @rewind/marketing <command>`
 - `pnpm --filter @rewind/shared <command>`
 
 ### Database Management
@@ -206,6 +228,15 @@ rewind/
 │   │   │   ├── lib/         # Utilities & API client
 │   │   │   └── routes/      # React Router routes
 │   │   ├── react-router.config.ts
+│   │   └── package.json
+│   │
+│   ├── marketing/            # Astro marketing site
+│   │   ├── src/
+│   │   │   ├── components/  # Astro components
+│   │   │   ├── layouts/     # Page layouts
+│   │   │   ├── pages/       # File-based routing
+│   │   │   └── styles/      # Global styles
+│   │   ├── astro.config.mjs
 │   │   └── package.json
 │   │
 │   └── shared/               # Shared TypeScript types
@@ -316,8 +347,8 @@ docker-compose restart
 - Use the "Test Path" button in Settings UI to validate the path
 
 **Web app can't connect to API:**
-- Verify API is running on port 3000
-- Check `VITE_API_URL` in `.env` (should be `http://localhost:3000`)
+- Verify API is running on port 8429
+- Check `VITE_API_URL` in `.env` (should be `http://localhost:8429`)
 - Check browser console for CORS errors
 - Ensure `WEB_URL` in `.env` matches your frontend URL
 
@@ -331,6 +362,9 @@ docker-compose restart
 7. Set `LOG_LEVEL=debug` in `.env` for detailed logging output
 8. Trigger ETL from web UI and watch real-time progress
 
+**Docker-specific issues:**
+For comprehensive Docker troubleshooting (port issues, migration prompts, rebuild strategies, etc.), see [DOCKER_TROUBLESHOOTING.md](DOCKER_TROUBLESHOOTING.md)
+
 For more information about logging, see [LOGGING.md](LOGGING.md)
 
 ## Environment Variables
@@ -341,21 +375,21 @@ The following environment variables can be configured in `.env` (see [.env.examp
 - `POSTGRES_USER` - PostgreSQL username (default: `rewind`)
 - `POSTGRES_PASSWORD` - PostgreSQL password (default: `rewind_dev_password`)
 - `POSTGRES_DB` - PostgreSQL database name (default: `rewind`)
-- `DATABASE_URL` - PostgreSQL connection string (default: `postgresql://rewind:rewind_dev_password@localhost:54321/rewind`)
+- `DATABASE_URL` - PostgreSQL connection string (default: `postgresql://rewind:rewind_dev_password@localhost:54329/rewind`)
 
 **API Configuration:**
 - `API_PORT` - API server port (default: `3000`)
-- `WEB_URL` - Frontend URL for CORS (default: `http://localhost:5173`)
+- `WEB_URL` - Frontend URL for CORS (default: `http://localhost:8430`)
 
 **Web Configuration:**
-- `VITE_API_URL` - API base URL for frontend (default: `http://localhost:3000`)
+- `VITE_API_URL` - API base URL for frontend (default: `http://localhost:8429`)
 
 **Logging Configuration:**
 - `LOG_LEVEL` - Logging verbosity: `error`, `warn`, `info`, `verbose`, `debug` (default: `info`)
 - `NODE_ENV` - Environment mode: `development` or `production` (affects logging behavior)
 
 **Data Path Configuration:**
-- `REWIND_DATA_PATH` - Path to Claude Code data directory (e.g., `/Users/yourusername/Library/Application Support/Rewind`)
+- `REWIND_DATA_PATH` - Path to Claude Code projects directory (default: `~/.claude/projects` on macOS/Linux, `%USERPROFILE%\.claude\projects` on Windows)
   - **Note**: Can also be configured via Settings UI at `/settings`
   - Database setting takes precedence over environment variable
 

@@ -99,7 +99,7 @@ export interface Conversation {
 }
 
 export interface Project {
-  id: string; // folder name (e.g., "-Users-dmg-career")
+  id: string; // folder name 
   name?: string; // raw name from DB
   displayName: string; // parsed/cleaned name
   conversationCount: number;

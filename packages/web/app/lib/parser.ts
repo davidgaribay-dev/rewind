@@ -92,7 +92,6 @@ export function calculateTokens(messages: ConversationMessage[]): {
 
 /**
  * Parse project name from folder name
- * e.g., "-Users-dmg-career" -> "career"
  */
 export function parseProjectName(folderName: string): string {
   // Remove leading dash and split by dashes

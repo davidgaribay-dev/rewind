@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -11,7 +9,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "54321:5432"
+      - "54329:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -31,11 +29,12 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      API_PORT: ${API_PORT:-3000}
+      API_PORT: ${API_PORT:-8429}
       NODE_ENV: ${NODE_ENV:-production}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      REWIND_DATA_PATH: /rewind-data
     ports:
-      - "3000:3000"
+      - "8429:8429"
     volumes:
       - ${REWIND_DATA_PATH}:/rewind-data:ro
     depends_on:
@@ -49,11 +48,11 @@ services:
     build:
       context: .
       dockerfile: packages/web/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8429}
     container_name: rewind-web
-    environment:
-      VITE_API_URL: http://localhost:3000
     ports:
-      - "5173:80"
+      - "8430:80"
     depends_on:
       - api
     networks:

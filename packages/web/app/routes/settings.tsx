@@ -11,8 +11,9 @@ import { FolderOpen, CheckCircle2, XCircle, ChevronRight, Home, ArrowUp, Folder,
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: 'Settings - Claude Projects Viewer' },
-    { name: 'description', content: 'Configure your Rewind data path' },
+    { title: 'Configuration - Rewind AI Governance' },
+    { name: 'description', content: 'Configure data source paths and governance settings for enterprise AI monitoring and compliance' },
+    { name: 'keywords', content: 'AI governance, configuration, data source, enterprise settings, compliance configuration' },
   ];
 }
 
@@ -37,10 +38,11 @@ export default function Settings() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ valid: boolean; message: string; projectCount?: number; conversationCount?: number } | null>(null);
   const { toast } = useToast();
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8429';
 
   useEffect(() => {
     // Load current saved path
-    fetch('http://localhost:3000/api/settings/data-path')
+    fetch(`${API_URL}/api/settings/data-path`)
       .then(res => res.json())
       .then(data => {
         if (data.path) {
@@ -58,7 +60,7 @@ export default function Settings() {
     setLoading(true);
     try {
       const params = path ? `?path=${encodeURIComponent(path)}` : '';
-      const response = await fetch(`http://localhost:3000/api/settings/browse${params}`);
+      const response = await fetch(`${API_URL}/api/settings/browse${params}`);
       const data: BrowseResponse = await response.json();
 
       setCurrentPath(data.currentPath || '');
@@ -84,7 +86,7 @@ export default function Settings() {
     setTestResult(null);
 
     try {
-      const response = await fetch('http://localhost:3000/api/settings/test-path', {
+      const response = await fetch(`${API_URL}/api/settings/test-path`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: selectedPath }),
@@ -120,7 +122,7 @@ export default function Settings() {
     if (!selectedPath) return;
 
     try {
-      const response = await fetch('http://localhost:3000/api/settings/data-path', {
+      const response = await fetch(`${API_URL}/api/settings/data-path`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: selectedPath }),
@@ -156,8 +158,7 @@ export default function Settings() {
               <CardTitle>Rewind Data Path</CardTitle>
               <CardDescription>
                 Browse and select the location of your Claude Code conversation data.
-                This is typically located at <code className="text-sm bg-muted px-1 rounded">~/.claude</code> or
-                <code className="text-sm bg-muted px-1 rounded">~/Library/Application Support/Claude</code>
+                This is typically located at <code className="text-sm bg-muted px-1 rounded">~/.claude/projects</code>
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -253,7 +254,7 @@ export default function Settings() {
               {/* Test Result */}
               {testResult && (
                 <div className={`flex items-center gap-2 p-3 rounded-md ${
-                  testResult.valid ? 'bg-green-50 text-green-900' : 'bg-red-50 text-red-900'
+                  testResult.valid ? 'bg-green-500/10 text-green-600 border border-green-500/20' : 'bg-destructive/10 text-destructive border border-destructive/30'
                 }`}>
                   {testResult.valid ? (
                     <>
