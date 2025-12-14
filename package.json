@@ -1,30 +1,24 @@
 {
-  "name": "rewind",
+  "name": "rewind-monorepo",
   "private": true,
-  "type": "module",
   "scripts": {
-    "build": "react-router build",
-    "dev": "react-router dev",
-    "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc"
-  },
-  "dependencies": {
-    "@react-router/node": "7.10.1",
-    "@react-router/serve": "7.10.1",
-    "isbot": "^5.1.31",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
-    "react-router": "7.10.1"
+    "dev": "pnpm --parallel -r dev",
+    "dev:api": "pnpm --filter @rewind/api dev",
+    "dev:web": "pnpm --filter @rewind/web dev",
+    "build": "pnpm -r build",
+    "build:api": "pnpm --filter @rewind/api build",
+    "build:web": "pnpm --filter @rewind/web build",
+    "typecheck": "pnpm --filter @rewind/web typecheck",
+    "typecheck:web": "pnpm --filter @rewind/web typecheck",
+    "start:api": "pnpm --filter @rewind/api start",
+    "start:web": "pnpm --filter @rewind/web start",
+    "db:generate": "pnpm --filter @rewind/api db:generate",
+    "db:push": "pnpm --filter @rewind/api db:push",
+    "db:studio": "pnpm --filter @rewind/api db:studio",
+    "etl:run": "pnpm --filter @rewind/api etl:run",
+    "etl:watch": "pnpm --filter @rewind/api etl:watch"
   },
   "devDependencies": {
-    "@react-router/dev": "7.10.1",
-    "@tailwindcss/vite": "^4.1.13",
-    "@types/node": "^22",
-    "@types/react": "^19.2.7",
-    "@types/react-dom": "^19.2.3",
-    "tailwindcss": "^4.1.13",
-    "typescript": "^5.9.2",
-    "vite": "^7.1.7",
-    "vite-tsconfig-paths": "^5.1.4"
+    "typescript": "^5.9.2"
   }
 }

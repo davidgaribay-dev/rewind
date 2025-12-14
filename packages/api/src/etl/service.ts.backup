@@ -1,0 +1,207 @@
+import { getDb, schema } from '../db/client';
+import { eq } from 'drizzle-orm';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { log } from '../logger';
+import { withTimeout } from '../utils/timeout';
+
+interface RewindMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+}
+
+interface RewindConversation {
+  id: string;
+  messages: RewindMessage[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+export class ETLService {
+  private db = getDb();
+  private rewindPath: string;
+
+  constructor() {
+    this.rewindPath = process.env.REWIND_DATA_PATH || '';
+    if (!this.rewindPath) {
+      throw new Error('REWIND_DATA_PATH environment variable is not set');
+    }
+  }
+
+  async run() {
+    log.info('🚀 Starting ETL process...');
+    log.info(`📁 Scanning: ${this.rewindPath}`);
+
+    try {
+      await this.extractAndTransform();
+      log.info('✅ ETL process completed successfully');
+    } catch (error) {
+      log.error('❌ ETL process failed:', error);
+      throw error;
+    }
+  }
+
+  private async extractAndTransform() {
+    const projectDirs = await this.getProjectDirectories();
+    log.info(`📊 Found ${projectDirs.length} projects`);
+
+    for (const projectDir of projectDirs) {
+      await this.processProject(projectDir);
+    }
+  }
+
+  private async getProjectDirectories(): Promise<string[]> {
+    try {
+      const entries = await fs.readdir(this.rewindPath, { withFileTypes: true });
+      return entries
+        .filter(entry => entry.isDirectory())
+        .map(entry => path.join(this.rewindPath, entry.name));
+    } catch (error) {
+      log.error('Error reading Rewind directory:', error);
+      return [];
+    }
+  }
+
+  private async processProject(projectPath: string) {
+    const projectName = path.basename(projectPath);
+    log.info(`  📦 Processing project: ${projectName}`);
+
+    // Upsert project
+    const [project] = await this.db
+      .insert(schema.projects)
+      .values({
+        name: projectName,
+        path: projectPath,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: schema.projects.path,
+        set: {
+          name: projectName,
+          updatedAt: new Date(),
+          lastScannedAt: new Date(),
+        },
+      })
+      .returning();
+
+    // Process conversation files
+    const conversationFiles = await this.getConversationFiles(projectPath);
+    log.info(`    💬 Found ${conversationFiles.length} conversations`);
+
+    for (const filePath of conversationFiles) {
+      await this.processConversation(filePath, project.id);
+    }
+  }
+
+  private async getConversationFiles(projectPath: string): Promise<string[]> {
+    try {
+      const entries = await fs.readdir(projectPath);
+      return entries
+        .filter(file => file.endsWith('.json'))
+        .map(file => path.join(projectPath, file));
+    } catch (error) {
+      log.error(`Error reading project directory ${projectPath}:`, error);
+      return [];
+    }
+  }
+
+  private async processConversation(filePath: string, projectId: string) {
+    try {
+      // Check if file was already processed and hasn't changed (with timeout)
+      const stats = await withTimeout(
+        fs.stat(filePath),
+        10000, // 10 second timeout for file stat
+        `File stat operation timed out for ${filePath}`
+      );
+      const fileModTime = stats.mtime;
+
+      const existingFile = await this.db.query.processedFiles.findFirst({
+        where: eq(schema.processedFiles.filePath, filePath),
+      });
+
+      if (existingFile && existingFile.lastModified >= fileModTime) {
+        // File hasn't changed, skip processing
+        return;
+      }
+
+      // Read and parse conversation file (with timeout)
+      const fileContent = await withTimeout(
+        fs.readFile(filePath, 'utf-8'),
+        30000, // 30 second timeout for file read
+        `File read operation timed out for ${filePath}`
+      );
+      const conversation: RewindConversation = JSON.parse(fileContent);
+
+      // Upsert conversation
+      const [dbConversation] = await this.db
+        .insert(schema.conversations)
+        .values({
+          projectId,
+          conversationId: conversation.id,
+          title: this.generateTitle(conversation),
+          createdAt: new Date(conversation.createdAt),
+          updatedAt: new Date(conversation.updatedAt),
+        })
+        .onConflictDoUpdate({
+          target: schema.conversations.conversationId,
+          set: {
+            updatedAt: new Date(conversation.updatedAt),
+            title: this.generateTitle(conversation),
+          },
+        })
+        .returning();
+
+      // Delete existing messages for this conversation (we'll re-insert them all)
+      await this.db
+        .delete(schema.messages)
+        .where(eq(schema.messages.conversationId, dbConversation.id));
+
+      // Insert messages
+      if (conversation.messages && conversation.messages.length > 0) {
+        await this.db.insert(schema.messages).values(
+          conversation.messages.map(msg => ({
+            conversationId: dbConversation.id,
+            role: msg.role,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp),
+          }))
+        );
+      }
+
+      // Update processed files tracker
+      await this.db
+        .insert(schema.processedFiles)
+        .values({
+          filePath,
+          lastModified: fileModTime,
+        })
+        .onConflictDoUpdate({
+          target: schema.processedFiles.filePath,
+          set: {
+            lastModified: fileModTime,
+            processedAt: new Date(),
+          },
+        });
+
+      log.info(`      ✓ Processed: ${path.basename(filePath)}`);
+    } catch (error) {
+      log.error(`      ✗ Failed to process ${filePath}:`, error);
+    }
+  }
+
+  private generateTitle(conversation: RewindConversation): string {
+    if (!conversation.messages || conversation.messages.length === 0) {
+      return 'Empty Conversation';
+    }
+
+    const firstUserMessage = conversation.messages.find(m => m.role === 'user');
+    if (!firstUserMessage) {
+      return 'Conversation';
+    }
+
+    // Take first 50 characters of first user message as title
+    const title = firstUserMessage.content.substring(0, 50);
+    return title.length < firstUserMessage.content.length ? `${title}...` : title;
+  }
+}
