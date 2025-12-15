@@ -6,17 +6,17 @@ A modern web application for browsing and visualizing your Claude Code conversat
 
 <div align="center">
 
-### Light Mode in Action
+### Light Mode
 
-<video src="https://i6ob6ensqrtpgseh.public.blob.vercel-storage.com/light-mode.mp4" controls width="800"></video>
+![Light Mode Demo](assets/light-mode.mp4)
 
-<img src="https://i6ob6ensqrtpgseh.public.blob.vercel-storage.com/stats.png" alt="Statistics Dashboard - View detailed token usage, model distribution, and activity timelines" width="800">
+![Statistics Dashboard - View detailed token usage, model distribution, and activity timelines](assets/stats.png)
 
-### Dark Mode in Action
+### Dark Mode
 
-<video src="https://i6ob6ensqrtpgseh.public.blob.vercel-storage.com/dark-mode.mp4" controls width="800"></video>
+![Dark Mode Demo](assets/dark-mode.mp4)
 
-<img src="https://i6ob6ensqrtpgseh.public.blob.vercel-storage.com/raw-nav-bar.png" alt="Navigation Interface - Browse projects, conversations, and search with Monaco code editor" width="800">
+![Navigation Interface - Browse projects, conversations, and search with Monaco code editor](assets/raw-nav-bar.png)
 
 </div>
 
@@ -426,10 +426,10 @@ The marketing website can be deployed to Vercel with one click.
 3. Click "Deploy" - no environment variables needed!
 
 The configuration is already set up to:
-- ✅ Deploy only the marketing site (`packages/marketing`)
-- ✅ Exclude sensitive packages (API, Web, CLI)
-- ✅ Auto-deploy on every push to `main`
-- ✅ No secrets or environment variables required
+- Deploy only the marketing site (`packages/marketing`)
+- Exclude sensitive packages (API, Web, CLI)
+- Auto-deploy on every push to `main`
+- No secrets or environment variables required
 
 ### Self-Hosted (Full Application)
 

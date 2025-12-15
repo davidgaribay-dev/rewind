@@ -21,6 +21,9 @@ Dockerfile*
 # Exclude documentation not needed for build
 FEATURES.md
 
+# Exclude README assets (only needed for GitHub)
+assets/
+
 # Exclude IDE and system files
 .vscode/
 .idea/
