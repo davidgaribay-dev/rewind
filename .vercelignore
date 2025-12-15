@@ -19,13 +19,7 @@ Dockerfile*
 .dockerignore
 
 # Exclude documentation not needed for build
-DOCKER_*.md
-CLI_IMPLEMENTATION.md
-DEPLOYMENT_READY.md
-
-# Exclude assets generation
-generate_logos*.py
-assets/
+FEATURES.md
 
 # Exclude IDE and system files
 .vscode/

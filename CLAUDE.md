@@ -108,11 +108,12 @@ pnpm docker:dev:logs:web
 - **Separate networks**: Uses `rewind-network-dev` to avoid conflicts with production setup
 - **No manual pnpm install needed**: Dependencies are installed during image build
 
-**For Docker troubleshooting**, see [DOCKER_TROUBLESHOOTING.md](DOCKER_TROUBLESHOOTING.md) for:
-- Common issues and solutions (interactive prompts, port configuration, path resolution)
-- When to rebuild vs restart
-- Debugging workflows
-- Best practices
+**For Docker troubleshooting:**
+- Common issues: interactive prompts, port configuration, path resolution
+- When to rebuild: use `pnpm docker:dev:rebuild` when Dockerfile or dependencies change
+- When to restart: use `pnpm docker:dev:restart` for configuration changes
+- View logs: `pnpm docker:dev:logs` or `pnpm docker:dev:logs:api` / `pnpm docker:dev:logs:web`
+- Clean slate: `pnpm docker:dev:clean` removes volumes and containers
 
 ### Running the Application
 
@@ -368,7 +369,7 @@ Required in `.env` (see [.env.example](.env.example)):
 - **Hono**: Ultra-fast web framework with Node.js server adapter
 - **Drizzle ORM**: Type-safe SQL query builder with PostgreSQL driver
 - **Chokidar**: File system watcher for ETL
-- **Winston**: Structured logging with file and console transports (see [LOGGING.md](LOGGING.md))
+- **Winston**: Structured logging with file and console transports
 - **tsx**: TypeScript execution for development
 
 ### Web (@rewind/web)
@@ -523,11 +524,12 @@ See [packages/cli/README.md](packages/cli/README.md) for comprehensive CLI docum
 
 ## Logging
 
-The project uses Winston for structured logging. See [LOGGING.md](LOGGING.md) for detailed documentation on:
-- Using the logger in backend and frontend code
-- Configuring log levels via environment variables
-- Production logging with file transports
-- Testing and troubleshooting logging
+The project uses Winston for structured logging with the following features:
+- Console and file transports for development and production
+- Configurable log levels via `LOG_LEVEL` environment variable (`error`, `warn`, `info`, `verbose`, `debug`)
+- Structured JSON formatting in production
+- Color-coded console output in development
+- Log files stored in `logs/` directory (excluded from git)
 
 ## Design System & UI Preferences
 

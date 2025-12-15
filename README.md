@@ -363,9 +363,10 @@ docker-compose restart
 8. Trigger ETL from web UI and watch real-time progress
 
 **Docker-specific issues:**
-For comprehensive Docker troubleshooting (port issues, migration prompts, rebuild strategies, etc.), see [DOCKER_TROUBLESHOOTING.md](DOCKER_TROUBLESHOOTING.md)
-
-For more information about logging, see [LOGGING.md](LOGGING.md)
+- Check container status with `docker ps`
+- View logs with `pnpm docker:dev:logs` or `pnpm docker:prod:logs`
+- Rebuild containers if dependencies change: `pnpm docker:dev:rebuild` or `pnpm docker:prod:rebuild`
+- For production deployment, ensure all environment variables are set in `.env`
 
 ## Environment Variables
 
@@ -397,7 +398,7 @@ The following environment variables can be configured in `.env` (see [.env.examp
 
 ### Marketing Website (Vercel)
 
-The marketing website can be deployed to Vercel with one click. See [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md) for detailed instructions.
+The marketing website can be deployed to Vercel with one click.
 
 **Quick Deploy:**
 1. Import repository at [vercel.com/new](https://vercel.com/new)
@@ -422,8 +423,6 @@ docker-compose up -d
 docker pull ghcr.io/davidgaribay-dev/rewind-api:latest
 docker pull ghcr.io/davidgaribay-dev/rewind-web:latest
 ```
-
-See [DOCKER_TROUBLESHOOTING.md](DOCKER_TROUBLESHOOTING.md) for deployment best practices.
 
 ## License
 
